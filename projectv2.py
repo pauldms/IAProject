@@ -404,52 +404,53 @@ domain = {
 
 
 
-def find_single_cure(result, row, new_row, domain, arbre) :
-    if (result == "1") :
-        for attr in new_row:
-            tmp = row[attr]
-            for i in domain[attr] :
-                row[attr] = str(i)
-                is_sick = arbre.classifie(row)[-1]
-                if (is_sick == "0") :
-                    return (attr,i)
-            row[attr] = tmp
+def find_single_cure(row, new_row, domain, arbre) :
+    for attr in new_row:
+        tmp = row[attr]
+        for i in domain[attr] :
+            row[attr] = str(i)
+            is_sick = arbre.classifie(row)[-1]
+            if (is_sick == "0") :
+                return (attr,i)
+        row[attr] = tmp
             
-def find_double_cure(result, row, new_row, domain, arbre) :
-    if (result == "1") :
-        for attr1 in new_row:
-            tmp1 = row[attr1]
-            for i in domain[attr1] :
-                row[attr1] = str(i)
-                for attr2 in new_row :
-                    tmp2 = row[attr2]
-                    for j in domain[attr2]:
-                        row[attr2] = str(j)
-                        is_sick = arbre.classifie(row)[-1]
-                        if (is_sick == "0") :
-                            return (attr1, attr2, i, j)
-                row[attr2] = tmp2
-            row[attr1] = tmp1          
+def find_double_cure(row, new_row, domain, arbre) :
+    for attr1 in new_row:
+        tmp1 = row[attr1]
+        for i in domain[attr1] :
+            row[attr1] = str(i)
+            for attr2 in new_row :
+                tmp2 = row[attr2]
+                for j in domain[attr2]:
+                    row[attr2] = str(j)
+                    is_sick = arbre.classifie(row)[-1]
+                    if (is_sick == "0") :
+                        return (attr1, attr2, i, j)
+            row[attr2] = tmp2
+        row[attr1] = tmp1          
 
 counter = 0
+total = 0
 for donnee in donneestest :
     new_donnee = donnee.copy()
     del new_donnee["age"]
     del new_donnee["sex"]
 
     result = arbre.classifie(donnee)
-    cure = find_single_cure(result[-1], donnee, new_donnee, domain, arbre)
-    if (cure == None) :
-        cure = find_double_cure(result[-1], donnee, new_donnee, domain, arbre)
+    if (result[-1] == "1"):
+        total += 1
+        cure = find_single_cure(donnee, new_donnee, domain, arbre)
         if (cure == None) :
-            print("We did not manage to cure the patient by changing 2 attributes")
-            counter += 1
-        else :
-            print ("We manage to cure the patient by setting " + cure[0] + " to " 
-                   + str(cure[2]) + " and " + cure[1] + " to " + str(cure[3]))
-    else : 
-         print ("We manage to cure the patient by setting " + cure[0] 
-                + " to " + str(cure[1]))
+            cure = find_double_cure(donnee, new_donnee, domain, arbre)
+            if (cure == None) :
+                print("We did not manage to cure the patient by changing 2 attributes")
+                counter += 1
+            else :
+                print ("We manage to cure the patient by setting " + cure[0] + " to " 
+                           + str(cure[2]) + " and " + cure[1] + " to " + str(cure[3]))
+        else : 
+            print ("We manage to cure the patient by setting " + cure[0] 
+                       + " to " + str(cure[1]))
         
 print("\nBy changing one or two attributes, we managed to cure " +
-      str(100 - counter*100/len(donneestest)) + "% of the patients")
+      str(100 - counter*100/total) + "% of the patients")
