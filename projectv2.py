@@ -388,6 +388,22 @@ print(pourcentage)
 
 #QUESTION 3
 
+
+paths = []
+noeuds = [(arbre,[("start",'0')])]
+
+while noeuds :
+    (n,p) = noeuds.pop(0)
+    if (n.terminal()) :
+        paths.append((p,n.classe()))
+    else : 
+        for key in n.enfants:
+            noeuds = [(n.enfants[key], p.copy()+ [(n.attribut,key)])] + noeuds
+
+
+
+
+#QUESTION 4 
 domain = {
     "cp" : range(4),
     "trestbps" : range(1,5),
