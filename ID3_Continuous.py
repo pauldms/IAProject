@@ -184,7 +184,9 @@ class ID3:
             # Sélectionne l'attribut qui réduit au maximum l'entropie.
             ##h_C_As_attribs = [(self.h_C_A(donnees, attribut, attributs[attribut]), 
             ##                   attribut) for attribut in attributs]
-            pair = min(h_C_As_attribs_values, key=lambda h_a: h_a[0])[1]
+            filtered_H_C_As = [p for p in h_C_As_attribs_values if p[0] > 0]
+            
+            pair = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
 
             # Crée les sous-arbres de manière récursive.
             ##attributs_restants = attributs.copy()
@@ -193,10 +195,10 @@ class ID3:
             partitions = self.divise(donnees, pair[0], pair[1])
             
             enfants = {}
-            enfants[0] = self.construit_arbre_recur(partitions[0],
+            enfants['0'] = self.construit_arbre_recur(partitions[0],
                                                              attributs,
                                                              predominant_class)
-            enfants[1] = self.construit_arbre_recur(partitions[1],
+            enfants['1'] = self.construit_arbre_recur(partitions[1],
                                                              attributs,
                                                              predominant_class)
 
@@ -206,11 +208,10 @@ class ID3:
     def divise(self,donnees,attribut,valeur) :
         partitions = ([],[])
         for donnee in donnees :
-            if (donnee[1][attribut] < valeur) :
+            if (float(donnee[1][attribut]) < float(valeur)) :
                 partitions[0].append(donnee)
             else : 
                 partitions[1].append(donnee)
-        
         return partitions
     
     def partitionne(self, donnees, attribut, valeurs):

@@ -400,6 +400,7 @@ while noeuds :
         for key in n.enfants:
             noeuds = [(n.enfants[key], p.copy()+ [(n.attribut,key)])] + noeuds
 
+print(paths)
 
 
 
