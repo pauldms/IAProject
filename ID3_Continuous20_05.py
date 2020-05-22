@@ -179,11 +179,13 @@ class ID3:
             return True
 
         if donnees == []:
+            print("vide")
             return NoeudDeDecision(None, [str(predominant_class), dict()], str(predominant_class))
 
         # Si toutes les données restantes font partie de la même classe,
         # on peut retourner un noeud terminal.         
         elif classe_unique(donnees):
+            print("classe unique")
             return NoeudDeDecision(None, donnees, str(predominant_class))
             
         else:
@@ -199,34 +201,37 @@ class ID3:
             #print(h_C_As_attribs_values)
             
             filtered_H_C_As = [p for p in h_C_As_attribs_values if p[0] > 0]
-            #print(filtered_H_C_As)
+            print(filtered_H_C_As)
+            pair = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
             
-            if(len(filtered_H_C_As) >0):
+            """if(len(filtered_H_C_As) >0):
                 pair = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
                 #print(pair)
             else : 
-                #print("len 0")
+                print("len 0")
                 return NoeudDeDecision(None, [str(predominant_class), dict()], str(predominant_class))
-          
+            """
             # Crée les sous-arbres de manière récursive.
             ##attributs_restants = attributs.copy()
             ##del attributs_restants[attribut] 
             
-            attributs_restants = attributs.copy()
+           # attributs_restants = attributs.copy()
            
             partitions = self.divise(donnees, pair[0], pair[1])
+            
             if(len(partitions['inf'])==0 or len(partitions['sup'])==0):
-                 del attributs_restants[pair[0]] 
+                print("same side")
+                return NoeudDeDecision(None, [str(predominant_class), dict()], str(predominant_class))
                 
            # print(partitions)
             
             enfants = {'0': 1, '1':2}
             
             enfants['0'] = self.construit_arbre_recur(partitions['inf'],
-                                                             attributs_restants,
+                                                             attributs,
                                                              predominant_class)
             enfants['1'] = self.construit_arbre_recur(partitions['sup'],
-                                                             attributs_restants,
+                                                             attributs,
                                                              predominant_class)
 
             return NoeudDeDecision(attribut, donnees, str(predominant_class), enfants)
@@ -373,7 +378,7 @@ id3 = ID3()
 arbre = id3.construit_arbre(donnees)
 
 #print('Arbre de décision :')
-print(arbre)
+#rint(arbre)
 #print()
 
 #QUESTION 2

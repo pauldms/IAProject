@@ -355,7 +355,7 @@ class ResultValues():
                 targets.append(target)
                 donneestest.append({'age' : ligne[0], 'sex' : ligne[1], 'cp' : ligne[2], 'trestbps' : ligne[3],'chol' :ligne[4], 'fbs':ligne[5] , 'restecg':ligne[6], 'thalach':ligne[7], 'exang':ligne[8], 'oldpeak':ligne[9], 'slope' :ligne[10], 'ca':ligne[11], 'thal':ligne[12] })
         
-        
+        print(donneestest[12])
         # TESTER LES DONNEES ET CALCULER LE POURCENTAGE DE BONNES REPONSES
                 
         S = 0
@@ -386,6 +386,28 @@ class ResultValues():
         print(paths)
         
         
+        regles = []
+        for k in range(len(paths)):
+            L , end = paths[k]
+            P = ""
+            for i in range(1,len(L)):
+                att, val = L[i]
+                P = P + " " + "Si" + " " + str(att) + " = " + val
+            P = P + " " + "Alors" + " " + end
+            regles.append(P)
+            
+        def find_explanation(entree, paths) :
+                for k in range(len(paths)):
+                    L , end = paths[k]
+                    match = 1;
+                    for i in range(1,len(L)):
+                        att, val = L[i]
+                        if(val != entree[att]):
+                            match = 0;
+                    if (match == 1) :
+                        return str(end) + " " + "Car a déclenché la règle" + regles[k]
+        
+        
         
         #QUESTION 4 
         domain = {
@@ -411,6 +433,7 @@ class ResultValues():
                     row[attr] = str(i)
                     is_sick = arbre.classifie(row)[-1]
                     if (is_sick == "0") :
+                        row[attr] = tmp
                         return (attr,i)
                 row[attr] = tmp
                     
@@ -425,6 +448,8 @@ class ResultValues():
                             row[attr2] = str(j)
                             is_sick = arbre.classifie(row)[-1]
                             if (is_sick == "0") :
+                                row[attr1] = tmp1 
+                                row[attr2] = tmp2
                                 return (attr1, attr2, i, j)
                     row[attr2] = tmp2
                 row[attr1] = tmp1          
@@ -432,6 +457,10 @@ class ResultValues():
         counter = 0
         total = 0
         for donnee in donneestest :
+            
+            print(find_explanation(donnee, paths))
+            
+            
             new_donnee = donnee.copy()
             del new_donnee["age"]
             del new_donnee["sex"]
@@ -455,16 +484,6 @@ class ResultValues():
         print("\nBy changing one or two attributes, we managed to cure " +
               str(100 - counter*100/total) + "% of the patients")
 
-        regles = []
-        for k in range(len(paths)):
-            L , end = paths[k]
-            P = ""
-            for i in range(1,len(L)):
-                att, val = L[i]
-                P = P + " " + "Si" + " " + str(att) + " = " + val
-            P = P + " " + "Alors" + " " + end
-            regles.append(P)
-                
         
         # Task 1
         self.arbre = arbre
@@ -477,6 +496,7 @@ class ResultValues():
     def get_results(self):
         return [self.arbre, self.faits_initiaux, self.regles, self.arbre_advance]
     
-print(ResultValues().get_results())
+#print(ResultValues().get_results())
+ResultValues().get_results()
     
     
