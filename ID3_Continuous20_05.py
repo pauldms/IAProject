@@ -56,8 +56,15 @@ class NoeudDeDecision:
             rep += 'Alors {}'.format(self.classe().upper())
         else:
             valeur = donnee[self.attribut]
-            enfant = self.enfants[valeur]
-            rep += 'Si {} = {}, '.format(self.attribut, valeur.upper())
+            
+            if(valeur in self.enfants['0'].donnees):
+                enfant = self.enfants['0']
+                rep += 'Si {} < {}, '.format(self.attribut, 'val tri')
+            else : 
+                enfant = self.enfants['1']
+                rep += 'Si {} > {}, '.format(self.attribut,'val tri')
+            
+           
             try:
                 rep += enfant.classifie(donnee)
             except:
@@ -80,10 +87,15 @@ class NoeudDeDecision:
                 rep += str(donnee) + '\n' 
 
         else:
-            for valeur, enfant in self.enfants.items():
-                rep += '---'*level
-                rep += 'Si {} = {}: \n'.format(self.attribut, valeur.upper())
-                rep += enfant.repr_arbre(level+1)
+            enfant = self.enfants['0']
+            rep += '---'*level
+            rep += 'Si {} < {}: \n'.format(self.attribut, 'val tri')
+            rep += enfant.repr_arbre(level+1)
+            
+            enfant = self.enfants['1']
+            rep += '---'*level
+            rep += 'Si {} > {}: \n'.format(self.attribut, 'val tri')
+            rep += enfant.repr_arbre(level+1)
 
         return rep
 
@@ -184,34 +196,50 @@ class ID3:
             # Sélectionne l'attribut qui réduit au maximum l'entropie.
             ##h_C_As_attribs = [(self.h_C_A(donnees, attribut, attributs[attribut]), 
             ##                   attribut) for attribut in attributs]
-            filtered_H_C_As = [p for p in h_C_As_attribs_values if p[0] > 0]
+            #print(h_C_As_attribs_values)
             
-            pair = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
-
+            filtered_H_C_As = [p for p in h_C_As_attribs_values if p[0] > 0]
+            #print(filtered_H_C_As)
+            
+            if(len(filtered_H_C_As) >0):
+                pair = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
+                #print(pair)
+            else : 
+                #print("len 0")
+                return NoeudDeDecision(None, [str(predominant_class), dict()], str(predominant_class))
+          
             # Crée les sous-arbres de manière récursive.
             ##attributs_restants = attributs.copy()
             ##del attributs_restants[attribut] 
-
-            partitions = self.divise(donnees, pair[0], pair[1])
             
-            enfants = {}
-            enfants['0'] = self.construit_arbre_recur(partitions[0],
-                                                             attributs,
+            attributs_restants = attributs.copy()
+           
+            partitions = self.divise(donnees, pair[0], pair[1])
+            if(len(partitions['inf'])==0 or len(partitions['sup'])==0):
+                 del attributs_restants[pair[0]] 
+                
+           # print(partitions)
+            
+            enfants = {'0': 1, '1':2}
+            
+            enfants['0'] = self.construit_arbre_recur(partitions['inf'],
+                                                             attributs_restants,
                                                              predominant_class)
-            enfants['1'] = self.construit_arbre_recur(partitions[1],
-                                                             attributs,
+            enfants['1'] = self.construit_arbre_recur(partitions['sup'],
+                                                             attributs_restants,
                                                              predominant_class)
 
             return NoeudDeDecision(attribut, donnees, str(predominant_class), enfants)
         
         
+    
     def divise(self,donnees,attribut,valeur) :
-        partitions = ([],[])
+        partitions = {'inf': [], 'sup': []} 
         for donnee in donnees :
             if (float(donnee[1][attribut]) < float(valeur)) :
-                partitions[0].append(donnee)
+                partitions['inf'].append(donnee)
             else : 
-                partitions[1].append(donnee)
+                partitions['sup'].append(donnee)
         return partitions
     
     def partitionne(self, donnees, attribut, valeurs):
@@ -344,9 +372,9 @@ with open('train_continuous.csv') as f:
 id3 = ID3()
 arbre = id3.construit_arbre(donnees)
 
-('Arbre de décision :')
-(arbre)
-()
+#print('Arbre de décision :')
+print(arbre)
+#print()
 
 #QUESTION 2
 
@@ -372,7 +400,7 @@ S = 0
 for k in range(len(donneestest)):
     #print(donneestest[k])
     result = arbre.classifie(donneestest[k])
-    print(result)
+    #print(result)
     resultat = result[-1] 
     #print(resultat)
 
@@ -381,5 +409,7 @@ for k in range(len(donneestest)):
 pourcentage = S*100/len(donneestest)
 
 print(pourcentage)
+#print(len(donneestest))
+print(targets)
     
     
