@@ -5,6 +5,7 @@ Created on Sat May 16 15:17:01 2020
 @author: pauld
 """
 
+import statistics
 
 class NoeudDeDecision:
     """ Un noeud dans un arbre de dÃ©cision. 
@@ -56,13 +57,14 @@ class NoeudDeDecision:
             rep += 'Alors {}'.format(self.classe().upper())
         else:
             valeur = donnee[self.attribut]
+            val_tri = list(self.enfants.keys())[1]
             
-            if(valeur in self.enfants['0'].donnees):
+            if(float(valeur) <= float(val_tri)):
                 enfant = self.enfants['0']
-                rep += 'Si {} < {}, '.format(self.attribut, 'val tri')
+                rep += 'Si {} <= {}, '.format(self.attribut, val_tri)
             else : 
-                enfant = self.enfants['1']
-                rep += 'Si {} > {}, '.format(self.attribut,'val tri')
+                enfant = self.enfants[val_tri]
+                rep += 'Si {} > {}, '.format(self.attribut,val_tri)
             
            
             try:
@@ -72,39 +74,34 @@ class NoeudDeDecision:
         return rep
 
     def repr_arbre(self, level=0):
-        """ ReprÃ©sentation sous forme de string de l'arbre de dÃ©cision duquel\
-            le noeud courant est la racine. 
-        """
-
-        rep = ''
-        if self.terminal():
-            rep += '---'*level
-            rep += 'Alors {}\n'.format(self.classe().upper())
-            rep += '---'*level
-            rep += 'DÃ©cision basÃ©e sur les donnÃ©es:\n'
-            for donnee in self.donnees:
+            """ ReprÃ©sentation sous forme de string de l'arbre de dÃ©cision duquel\
+                le noeud courant est la racine. 
+            """
+    
+            rep = ''
+            if self.terminal():
                 rep += '---'*level
-                rep += str(donnee) + '\n' 
-
-        else:
-            enfant = self.enfants['0']
-            rep += '---'*level
-            rep += 'Si {} < {}: \n'.format(self.attribut, 'val tri')
-            rep += enfant.repr_arbre(level+1)
-            
-            enfant = self.enfants['1']
-            rep += '---'*level
-            rep += 'Si {} > {}: \n'.format(self.attribut, 'val tri')
-            rep += enfant.repr_arbre(level+1)
-
-        return rep
-
+                rep += 'Alors {}\n'.format(self.classe().upper())
+                rep += '---'*level
+                rep += 'DÃ©cision basÃ©e sur les donnÃ©es:\n'
+                for donnee in self.donnees:
+                    rep += '---'*level
+                    rep += str(donnee) + '\n' 
+    
+            else:
+                for valeur, enfant in self.enfants.items():
+                    rep += '---'*level
+                    rep += 'Si {} = {}: \n'.format(self.attribut, valeur.upper())
+                    rep += enfant.repr_arbre(level+1)
+    
+            return rep
+        
     def __repr__(self):
         """ ReprÃ©sentation sous forme de string de l'arbre de dÃ©cision duquel\
             le noeud courant est la racine. 
         """
 
-        return str(self.repr_arbre(level=0))
+        return str(self.repr_arbre(level=0))    
     
 #CREATION DE LA CLASSE ID3
         
@@ -179,30 +176,43 @@ class ID3:
             return True
 
         if donnees == []:
-            print("vide")
             return NoeudDeDecision(None, [str(predominant_class), dict()], str(predominant_class))
 
         # Si toutes les données restantes font partie de la même classe,
         # on peut retourner un noeud terminal.         
         elif classe_unique(donnees):
-            print("classe unique")
             return NoeudDeDecision(None, donnees, str(predominant_class))
             
         else:
+            
+            h_C_As_attribs = [(self.h_C_A(donnees, attribut, attributs[attribut]), 
+                                       attribut) for attribut in attributs]
+            # Sélectionne l'attribut qui réduit au maximum l'entropie.
+            ##h_C_As_attribs = [(self.h_C_A(donnees, attribut, attributs[attribut]), 
+            ##                   attribut) for attribut in attributs]
+            #print(h_C_As_attribs_values)
+            
+            filtered_H_C_As = [p for p in h_C_As_attribs if p[0] > 0]
+            attribut = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
+            
+            """
             h_C_As_attribs_values = []
             for attribut in attributs :
                 for value in attributs[attribut] :
                     h_C_As_attribs_values.append(
                         (self.h_C_aj(donnees, attribut, value), 
                                (attribut,value)))
+           
+                    
+            
             # Sélectionne l'attribut qui réduit au maximum l'entropie.
             ##h_C_As_attribs = [(self.h_C_A(donnees, attribut, attributs[attribut]), 
             ##                   attribut) for attribut in attributs]
             #print(h_C_As_attribs_values)
-            
+                    
             filtered_H_C_As = [p for p in h_C_As_attribs_values if p[0] > 0]
-            print(filtered_H_C_As)
-            pair = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
+            attribut,valeur = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
+            """
             
             """if(len(filtered_H_C_As) >0):
                 pair = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
@@ -216,21 +226,28 @@ class ID3:
             ##del attributs_restants[attribut] 
             
            # attributs_restants = attributs.copy()
-           
-            partitions = self.divise(donnees, pair[0], pair[1])
+            filtered_H_C_As = [p for p in h_C_As_attribs if p[0] > 0]
+            attribut = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
             
+            
+            valeurs = [float(donnee[1][attribut]) for donnee in donnees]
+            valeur = statistics.mean(valeurs);
+            partitions = self.divise(donnees, attribut,valeur)
+            
+            print(str(len(partitions['inf'])) + " length " + str(len(partitions['sup'])))
             if(len(partitions['inf'])==0 or len(partitions['sup'])==0):
-                print("same side")
+                print(partitions)
+                print("atrib,val = "+ attribut +"," + str(valeur))
                 return NoeudDeDecision(None, [str(predominant_class), dict()], str(predominant_class))
                 
            # print(partitions)
             
-            enfants = {'0': 1, '1':2}
+            enfants = {}
             
             enfants['0'] = self.construit_arbre_recur(partitions['inf'],
                                                              attributs,
                                                              predominant_class)
-            enfants['1'] = self.construit_arbre_recur(partitions['sup'],
+            enfants[str(valeur)] = self.construit_arbre_recur(partitions['sup'],
                                                              attributs,
                                                              predominant_class)
 
@@ -241,7 +258,7 @@ class ID3:
     def divise(self,donnees,attribut,valeur) :
         partitions = {'inf': [], 'sup': []} 
         for donnee in donnees :
-            if (float(donnee[1][attribut]) < float(valeur)) :
+            if (float(donnee[1][attribut]) <= float(valeur)) :
                 partitions['inf'].append(donnee)
             else : 
                 partitions['sup'].append(donnee)
@@ -357,6 +374,46 @@ class ID3:
 
         return sum([p_aj * h_c_aj for p_aj, h_c_aj in zip(p_ajs, h_c_ajs)])
     
+    def h_C_aj2(self, donnees, attribut, valeur):
+        """ H(C|a_j) - l'entropie de la classe parmi les données pour lesquelles\
+            l'attribut A vaut a_j.
+
+            :param list donnees: les données d'apprentissage.
+            :param attribut: l'attribut A.
+            :param valeur: la valeur a_j de l'attribut A.
+            :return: H(C|a_j)
+        """
+        # Les classes attestées dans les exemples.
+        classes = list(set([donnee[0] for donnee in donnees]))
+        
+        # Calcule p(c_i|a_j) pour chaque classe c_i.
+        p_ci_ajs = [self.p_ci_aj(donnees, attribut, valeur, classe) 
+                    for classe in classes]
+
+        # Si p vaut 0 -> plog(p) vaut 0.
+        return -sum([p_ci_aj * log(p_ci_aj, 2.0) 
+                    for p_ci_aj in p_ci_ajs 
+                    if p_ci_aj != 0])
+    
+    def h_C_A2(self, donnees, attribut, valeurs):
+        """ H(C|A) - l'entropie de la classe après avoir choisi de partitionner\
+            les données suivant les valeurs de l'attribut A.
+            
+            :param list donnees: les données d'apprentissage.
+            :param attribut: l'attribut A.
+            :param list valeurs: les valeurs a_j de l'attribut A.
+            :return: H(C|A)
+        """
+        # Calcule P(a_j) pour chaque valeur a_j de l'attribut A.
+        p_ajs = [self.p_aj(donnees, attribut, valeur) for valeur in valeurs]
+
+        # Calcule H_C_aj pour chaque valeur a_j de l'attribut A.
+        h_c_ajs = [self.h_C_aj(donnees, attribut, valeur) 
+                   for valeur in valeurs]
+
+        return sum([p_aj * h_c_aj for p_aj, h_c_aj in zip(p_ajs, h_c_ajs)])
+    
+    
     
 donnees = []
 import csv
@@ -389,7 +446,7 @@ donneestest = []
 targets = []
 import csv
 
-with open('test_public_continuous.csv') as f:
+with open('train_continuous.csv') as f:
     f_csv = csv.reader(f)
     en_tetes = next(f_csv)
     for ligne in f_csv:
@@ -405,16 +462,19 @@ S = 0
 for k in range(len(donneestest)):
     #print(donneestest[k])
     result = arbre.classifie(donneestest[k])
-    #print(result)
+    print(result)
     resultat = result[-1] 
-    #print(resultat)
-
+    #print(resultat + " " + targets[k])
     if resultat == targets[k]:
         S += 1
+    else : 
+        print(k)
+        
 pourcentage = S*100/len(donneestest)
 
 print(pourcentage)
 #print(len(donneestest))
-print(targets)
+
+
     
     
