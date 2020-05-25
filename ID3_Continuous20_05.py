@@ -5,7 +5,6 @@ Created on Sat May 16 15:17:01 2020
 @author: pauld
 """
 
-import statistics
 
 class NoeudDeDecision:
     """ Un noeud dans un arbre de dÃ©cision. 
@@ -59,7 +58,7 @@ class NoeudDeDecision:
             valeur = donnee[self.attribut]
             val_tri = list(self.enfants.keys())[1]
             
-            if(float(valeur) <= float(val_tri)):
+            if(float(valeur) < float(val_tri)):
                 enfant = self.enfants['0']
                 rep += 'Si {} <= {}, '.format(self.attribut, val_tri)
             else : 
@@ -138,14 +137,11 @@ class ID3:
 
         # Find the predominant class
         classes = set([row[0] for row in donnees])
-        # print(classes)
         predominant_class_counter = -1
         for c in classes:
-            # print([row[0] for row in donnees].count(c))
             if [row[0] for row in donnees].count(c) >= predominant_class_counter:
                 predominant_class_counter = [row[0] for row in donnees].count(c)
                 predominant_class = c
-        # print(predominant_class)
             
         arbre = self.construit_arbre_recur(donnees, attributs, predominant_class)
 
@@ -177,7 +173,7 @@ class ID3:
 
         if donnees == []:
             return NoeudDeDecision(None, [str(predominant_class), dict()], str(predominant_class))
-
+    
         # Si toutes les données restantes font partie de la même classe,
         # on peut retourner un noeud terminal.         
         elif classe_unique(donnees):
@@ -185,71 +181,48 @@ class ID3:
             
         else:
             
-            h_C_As_attribs = [(self.h_C_A(donnees, attribut, attributs[attribut]), 
-                                       attribut) for attribut in attributs]
-            # Sélectionne l'attribut qui réduit au maximum l'entropie.
-            ##h_C_As_attribs = [(self.h_C_A(donnees, attribut, attributs[attribut]), 
-            ##                   attribut) for attribut in attributs]
-            #print(h_C_As_attribs_values)
-            
-            filtered_H_C_As = [p for p in h_C_As_attribs if p[0] > 0]
-            attribut = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
-            
-            """
             h_C_As_attribs_values = []
             for attribut in attributs :
                 for value in attributs[attribut] :
                     h_C_As_attribs_values.append(
-                        (self.h_C_aj(donnees, attribut, value), 
+                        (self.h_C_A(donnees, attribut, value), 
                                (attribut,value)))
            
                     
             
             # Sélectionne l'attribut qui réduit au maximum l'entropie.
-            ##h_C_As_attribs = [(self.h_C_A(donnees, attribut, attributs[attribut]), 
-            ##                   attribut) for attribut in attributs]
-            #print(h_C_As_attribs_values)
+            
                     
-            filtered_H_C_As = [p for p in h_C_As_attribs_values if p[0] > 0]
-            attribut,valeur = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
-            """
+            #filtered_H_C_As = [p for p in h_C_As_attribs_values if p[0] > 0]
+            #attribut,valeur = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
+            attribut,valeur = min(h_C_As_attribs_values, key=lambda h_a: h_a[0])[1]
+        
             
-            """if(len(filtered_H_C_As) >0):
-                pair = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
-                #print(pair)
-            else : 
-                print("len 0")
-                return NoeudDeDecision(None, [str(predominant_class), dict()], str(predominant_class))
-            """
-            # Crée les sous-arbres de manière récursive.
-            ##attributs_restants = attributs.copy()
-            ##del attributs_restants[attribut] 
-            
-           # attributs_restants = attributs.copy()
-            filtered_H_C_As = [p for p in h_C_As_attribs if p[0] > 0]
-            attribut = min(filtered_H_C_As, key=lambda h_a: h_a[0])[1]
-            
-            
-            valeurs = [float(donnee[1][attribut]) for donnee in donnees]
-            valeur = statistics.mean(valeurs);
             partitions = self.divise(donnees, attribut,valeur)
-            
-            print(str(len(partitions['inf'])) + " length " + str(len(partitions['sup'])))
-            if(len(partitions['inf'])==0 or len(partitions['sup'])==0):
-                print(partitions)
-                print("atrib,val = "+ attribut +"," + str(valeur))
-                return NoeudDeDecision(None, [str(predominant_class), dict()], str(predominant_class))
-                
-           # print(partitions)
             
             enfants = {}
             
-            enfants['0'] = self.construit_arbre_recur(partitions['inf'],
+            print(str(len(partitions['inf'])) + " length " + str(len(partitions['sup'])))
+            if(len(partitions['inf'])==0 or len(partitions['sup'])==0):
+                rest = donnees.copy();
+                first = [rest.pop()]
+                print("first " + str(len(first)) + str(first))
+                print("rest " + str(len(rest)) + str(rest))
+                enfants['0'] = self.construit_arbre_recur(first,
                                                              attributs,
                                                              predominant_class)
-            enfants[str(valeur)] = self.construit_arbre_recur(partitions['sup'],
+                enfants[str(valeur)] = self.construit_arbre_recur(rest,
                                                              attributs,
                                                              predominant_class)
+            
+            else :
+            
+                enfants['0'] = self.construit_arbre_recur(partitions['inf'],
+                                                                 attributs,
+                                                                 predominant_class)
+                enfants[str(valeur)] = self.construit_arbre_recur(partitions['sup'],
+                                                                 attributs,
+                                                                 predominant_class)
 
             return NoeudDeDecision(attribut, donnees, str(predominant_class), enfants)
         
@@ -258,32 +231,16 @@ class ID3:
     def divise(self,donnees,attribut,valeur) :
         partitions = {'inf': [], 'sup': []} 
         for donnee in donnees :
-            if (float(donnee[1][attribut]) <= float(valeur)) :
+            if (float(donnee[1][attribut]) < float(valeur)) :
                 partitions['inf'].append(donnee)
             else : 
                 partitions['sup'].append(donnee)
         return partitions
     
-    def partitionne(self, donnees, attribut, valeurs):
-        """ Partitionne les données sur les valeurs a_j de l'attribut A.
-
-            :param list donnees: les données à partitioner.
-            :param attribut: l'attribut A de partitionnement.
-            :param list valeurs: les valeurs a_j de l'attribut A.
-            :return: un dictionnaire qui associe à chaque valeur a_j de\
-            l'attribut A une liste l_j contenant les données pour lesquelles A\
-            vaut a_j.
-        """
-        partitions = {valeur: [] for valeur in valeurs}
-        
-        for donnee in donnees:
-            partition = partitions[donnee[1][attribut]]
-            partition.append(donnee)
-            
-        return partitions
-
-    def p_aj(self, donnees, attribut, valeur):
-        """ p(a_j) - la probabilité que la valeur de l'attribut A soit a_j.
+    
+    def p_inf_aj(self, donnees, attribut, valeur):
+        """ p(<=a_j) - la probabilité que la valeur de l'attribut A 
+            soit inférieure ou égale à a_j.
 
             :param list donnees: les données d'apprentissage.
             :param attribut: l'attribut A.
@@ -297,19 +254,30 @@ class ID3:
         if nombre_donnees == 0:
             return 0.0
         
-        # Nombre d'occurrences de la valeur a_j parmi les données.
+        # Nombre d'occurrences de valeurs <= a_j parmi les données.
         nombre_aj = 0
         for donnee in donnees:
-            if donnee[1][attribut] == valeur:
+            if donnee[1][attribut] < valeur:
                 nombre_aj += 1
 
-        # p(a_j) = nombre d'occurrences de la valeur a_j parmi les données / 
+        # p(a_j) = nombre d'occurrences de valeurs <= a_j parmi les données / 
         #          nombre de données.
         return nombre_aj / nombre_donnees
+    
+    def p_sup_aj(self,donnees,attribut,valeur):
+        """ p(>a_j) - la probabilité que la valeur de l'attribut A 
+            soit suppérieure à a_j.
 
-    def p_ci_aj(self, donnees, attribut, valeur, classe):
-        """ p(c_i|a_j) - la probabilité conditionnelle que la classe C soit c_i\
-            étant donné que l'attribut A vaut a_j.
+            :param list donnees: les données d'apprentissage.
+            :param attribut: l'attribut A.
+            :param valeur: la valeur a_j de l'attribut A.            
+            :return: p(a_j)
+        """
+        return 1 - self.p_inf_aj(donnees,attribut,valeur)
+    
+    def p_ci_inf_aj(self, donnees, attribut, valeur, classe):
+        """ p(c_i|<=a_j) - la probabilité conditionnelle que la classe C soit c_i\
+            étant donné que l'attribut A est inférieur ou égal à a_j.
 
             :param list donnees: les données d'apprentissage.
             :param attribut: l'attribut A.
@@ -317,8 +285,8 @@ class ID3:
             :param classe: la valeur c_i de la classe C.
             :return: p(c_i | a_j)
         """
-        # Nombre d'occurrences de la valeur a_j parmi les données.
-        donnees_aj = [donnee for donnee in donnees if donnee[1][attribut] == valeur]
+        # Nombre d'occurrences de valeurs <= a_j parmi les données.
+        donnees_aj = [donnee for donnee in donnees if donnee[1][attribut] < valeur]
         nombre_aj = len(donnees_aj)
         
         # Permet d'éviter les divisions par 0.
@@ -326,18 +294,46 @@ class ID3:
             return 0
         
         # Nombre d'occurrences de la classe c_i parmi les données pour lesquelles 
-        # A vaut a_j.
+        # A est inférieur ou égal à a_j.
         donnees_ci = [donnee for donnee in donnees_aj if donnee[0] == classe]
         nombre_ci = len(donnees_ci)
 
         # p(c_i|a_j) = nombre d'occurrences de la classe c_i parmi les données 
-        #              pour lesquelles A vaut a_j /
-        #              nombre d'occurrences de la valeur a_j parmi les données.
+        #              pour lesquelles A est inférieur ou égal à a_j /
+        #              nombre d'occurrences de valeurs <= a_j parmi les données.
         return nombre_ci / nombre_aj
+    
+    def p_ci_sup_aj(self, donnees, attribut, valeur, classe):
+        """ p(c_i|>a_j) - la probabilité conditionnelle que la classe C soit c_i\
+            étant donné que l'attribut A est supérieur à a_j.
 
-    def h_C_aj(self, donnees, attribut, valeur):
-        """ H(C|a_j) - l'entropie de la classe parmi les données pour lesquelles\
-            l'attribut A vaut a_j.
+            :param list donnees: les données d'apprentissage.
+            :param attribut: l'attribut A.
+            :param valeur: la valeur a_j de l'attribut A.
+            :param classe: la valeur c_i de la classe C.
+            :return: p(c_i | a_j)
+        """
+        # Nombre d'occurrences de valeurs > a_j parmi les données.
+        donnees_aj = [donnee for donnee in donnees if donnee[1][attribut] >= valeur]
+        nombre_aj = len(donnees_aj)
+        
+        # Permet d'éviter les divisions par 0.
+        if nombre_aj == 0:
+            return 0
+        
+        # Nombre d'occurrences de la classe c_i parmi les données pour lesquelles 
+        # A est > à a_j.
+        donnees_ci = [donnee for donnee in donnees_aj if donnee[0] == classe]
+        nombre_ci = len(donnees_ci)
+
+        # p(c_i|a_j) = nombre d'occurrences de la classe c_i parmi les données 
+        #              pour lesquelles A est > à a_j /
+        #              nombre d'occurrences de valeurs > a_j parmi les données.
+        return nombre_ci / nombre_aj
+    
+    def h_C_inf_aj(self, donnees, attribut, valeur):
+        """ H(C|<=a_j) - l'entropie de la classe parmi les données pour lesquelles\
+            l'attribut A est inférieur ou égal à a_j.
 
             :param list donnees: les données d'apprentissage.
             :param attribut: l'attribut A.
@@ -347,36 +343,18 @@ class ID3:
         # Les classes attestées dans les exemples.
         classes = list(set([donnee[0] for donnee in donnees]))
         
-        # Calcule p(c_i|a_j) pour chaque classe c_i.
-        p_ci_ajs = [self.p_ci_aj(donnees, attribut, valeur, classe) 
+        # Calcule p(c_i|<=a_j) pour chaque classe c_i.
+        p_ci_ajs = [self.p_ci_inf_aj(donnees, attribut, valeur, classe) 
                     for classe in classes]
 
         # Si p vaut 0 -> plog(p) vaut 0.
         return -sum([p_ci_aj * log(p_ci_aj, 2.0) 
                     for p_ci_aj in p_ci_ajs 
                     if p_ci_aj != 0])
-
-    def h_C_A(self, donnees, attribut, valeurs):
-        """ H(C|A) - l'entropie de la classe après avoir choisi de partitionner\
-            les données suivant les valeurs de l'attribut A.
-            
-            :param list donnees: les données d'apprentissage.
-            :param attribut: l'attribut A.
-            :param list valeurs: les valeurs a_j de l'attribut A.
-            :return: H(C|A)
-        """
-        # Calcule P(a_j) pour chaque valeur a_j de l'attribut A.
-        p_ajs = [self.p_aj(donnees, attribut, valeur) for valeur in valeurs]
-
-        # Calcule H_C_aj pour chaque valeur a_j de l'attribut A.
-        h_c_ajs = [self.h_C_aj(donnees, attribut, valeur) 
-                   for valeur in valeurs]
-
-        return sum([p_aj * h_c_aj for p_aj, h_c_aj in zip(p_ajs, h_c_ajs)])
     
-    def h_C_aj2(self, donnees, attribut, valeur):
-        """ H(C|a_j) - l'entropie de la classe parmi les données pour lesquelles\
-            l'attribut A vaut a_j.
+    def h_C_sup_aj(self, donnees, attribut, valeur):
+        """ H(C|<=a_j) - l'entropie de la classe parmi les données pour lesquelles\
+            l'attribut A est inférieur ou égal à a_j.
 
             :param list donnees: les données d'apprentissage.
             :param attribut: l'attribut A.
@@ -386,8 +364,8 @@ class ID3:
         # Les classes attestées dans les exemples.
         classes = list(set([donnee[0] for donnee in donnees]))
         
-        # Calcule p(c_i|a_j) pour chaque classe c_i.
-        p_ci_ajs = [self.p_ci_aj(donnees, attribut, valeur, classe) 
+        # Calcule p(c_i|<=a_j) pour chaque classe c_i.
+        p_ci_ajs = [self.p_ci_sup_aj(donnees, attribut, valeur, classe) 
                     for classe in classes]
 
         # Si p vaut 0 -> plog(p) vaut 0.
@@ -395,24 +373,25 @@ class ID3:
                     for p_ci_aj in p_ci_ajs 
                     if p_ci_aj != 0])
     
-    def h_C_A2(self, donnees, attribut, valeurs):
+    def h_C_A(self, donnees, attribut, valeur):
         """ H(C|A) - l'entropie de la classe après avoir choisi de partitionner\
-            les données suivant les valeurs de l'attribut A.
+            les données suivant quelles soint inferieures
+            ou superieures à la valeur de l'attribut A.
             
             :param list donnees: les données d'apprentissage.
             :param attribut: l'attribut A.
-            :param list valeurs: les valeurs a_j de l'attribut A.
+            :param valeur: les valeurs suivant laquelle on partitionne.
             :return: H(C|A)
         """
         # Calcule P(a_j) pour chaque valeur a_j de l'attribut A.
-        p_ajs = [self.p_aj(donnees, attribut, valeur) for valeur in valeurs]
+        p_inf_aj = self.p_inf_aj(donnees, attribut, valeur)
+        p_sup_aj = self.p_sup_aj(donnees, attribut, valeur)
 
         # Calcule H_C_aj pour chaque valeur a_j de l'attribut A.
-        h_c_ajs = [self.h_C_aj(donnees, attribut, valeur) 
-                   for valeur in valeurs]
-
-        return sum([p_aj * h_c_aj for p_aj, h_c_aj in zip(p_ajs, h_c_ajs)])
-    
+        h_c_inf_aj = self.h_C_inf_aj(donnees, attribut, valeur) 
+        h_c_sup_aj = self.h_C_sup_aj(donnees, attribut, valeur) 
+                   
+        return p_inf_aj*h_c_inf_aj + p_sup_aj*h_c_sup_aj
     
     
 donnees = []
@@ -425,7 +404,7 @@ with open('train_continuous.csv') as f:
         target = ligne.pop()
         donnees.append([target,{'age' : ligne[0], 'sex' : ligne[1], 'cp' : ligne[2], 'trestbps' : ligne[3],'chol' :ligne[4], 'fbs':ligne[5] , 'restecg':ligne[6], 'thalach':ligne[7], 'exang':ligne[8], 'oldpeak':ligne[9], 'slope' :ligne[10], 'ca':ligne[11], 'thal':ligne[12] }])
 
-#print(donnees)
+
 
 
     
@@ -446,7 +425,7 @@ donneestest = []
 targets = []
 import csv
 
-with open('train_continuous.csv') as f:
+with open('test_public_continuous.csv') as f:
     f_csv = csv.reader(f)
     en_tetes = next(f_csv)
     for ligne in f_csv:
@@ -462,13 +441,10 @@ S = 0
 for k in range(len(donneestest)):
     #print(donneestest[k])
     result = arbre.classifie(donneestest[k])
-    print(result)
     resultat = result[-1] 
     #print(resultat + " " + targets[k])
     if resultat == targets[k]:
         S += 1
-    else : 
-        print(k)
         
 pourcentage = S*100/len(donneestest)
 

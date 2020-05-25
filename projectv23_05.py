@@ -416,6 +416,7 @@ class ResultValues():
 #QUESTION 3
         
         #FIRST WE CREATE INITIAL FACTS FROM THE TRAINING DATASET
+        
         faits_initiaux = []
         for donnee in donnees :
             faits_initiaux.append([str(attr) + " = " + 
@@ -542,6 +543,9 @@ class ResultValues():
         print("\nBy changing one or two attributes, we managed to cure " +
               str(100 - counter*100/total) + "% of the originaly sick patients\n")
 
+
+
+#WE STORE THE RESULT VALUES
         
         # Task 1
         self.arbre = arbre
